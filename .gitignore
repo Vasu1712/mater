@@ -217,3 +217,32 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+frontend/node_modules
+frontend/.pnp
+frontend/.pnp.js
+
+# Next.js Build Outputs
+frontend/.next/
+frontend/out/
+frontend/build
+
+# Vercel Deployment Secrets
+frontend/.vercel
+
+# Testing & Coverage
+frontend/coverage
+
+# Debug Logs
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+frontend/pnpm-debug.log*
+frontend/bun-debug.log*
+
+# System Files
+frontend/.DS_Store
+frontend/Thumbs.db
+
+# TypeScript Build Info
+frontend/*.tsbuildinfo
