@@ -29,7 +29,7 @@ flowchart TB
     end
 
     %% ── LLM / Agent Layer ──
-    subgraph OLLAMA["Ollama — Nemotron-3-Ultra-4B"]
+    subgraph OLLAMA["Ollama — gemma4:e4b-3-Ultra-4B"]
         mater["🧑‍✈️ Mater Agent<br/><small>Driver • Voice-first<br/>Wake word: 'Mater'<br/>Always-on</small>"]
         host["👤 Host Agent<br/><small>Owner • Chat-based<br/>Fleet management<br/>Lower priority</small>"]
     end
@@ -96,7 +96,7 @@ docker-compose.yml all services + Redis / TimescaleDB / Qdrant / Ollama
 docker compose up -d --build          # bring up everything
 
 # Pull the LLM into Ollama (one time)
-docker exec mater_ollama ollama pull nemotron-mini
+docker exec mater_ollama ollama pull gemma4:e4b-mini
 
 # Generate live telemetry (host needs: pip install httpx)
 python backend/tools/simulator.py --car-id acc001 --rate 5
@@ -144,7 +144,7 @@ uvicorn agent.api:app --reload --port 8100        # terminal 3
 * **Audio** (whisper.cpp ASR, VoXtream2 TTS, wake-word) is device/native and is
   not bundled here — the Mater agent exposes a text `/api/chat` surface that a
   voice front-end would wrap.
-* `nemotron-mini` is the default Ollama tag; set `LLM_MODEL` to the exact
-  Nemotron build you run.
+* `gemma4:e4b-mini` is the default Ollama tag; set `LLM_MODEL` to the exact
+  gemma4:e4b build you run.
 * The backend is one image with multiple entrypoints (ingestion / mcp / agent),
   keeping the shared `common` code DRY.

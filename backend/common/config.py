@@ -32,7 +32,7 @@ class Settings:
 
     # --- Ollama (LLM engine) ---
     OLLAMA_URL: str = _env("OLLAMA_URL", "http://localhost:11434")
-    LLM_MODEL: str = _env("LLM_MODEL", "nemotron-mini")
+    LLM_MODEL: str = _env("LLM_MODEL", "gemma4:e4b-mini")
 
     # --- MCP server ---
     MCP_HOST: str = _env("MCP_HOST", "0.0.0.0")

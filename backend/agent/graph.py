@@ -1,7 +1,7 @@
 """LangGraph ReAct agents for Mater (driver) and Host (owner).
 
 Both agents share the Fast-MCP tool layer and the local Ollama model
-(Nemotron). Tools are loaded over MCP so the agents stay decoupled from the
+(gemma4:e4b). Tools are loaded over MCP so the agents stay decoupled from the
 data stores.
 """
 from __future__ import annotations

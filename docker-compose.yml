@@ -112,7 +112,7 @@ services:
       - QDRANT_URL=http://qdrant:6333
       - MCP_URL=http://mcp:8765/mcp
       - OLLAMA_URL=http://ollama:11434
-      - LLM_MODEL=nemotron-mini
+      - LLM_MODEL=gemma4:e4b-mini
     ports:
       - "8100:8100"
     depends_on:

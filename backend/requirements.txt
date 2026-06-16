@@ -1,22 +1,27 @@
 # --- Web / ingestion ---
-fastapi==0.115.6
-uvicorn[standard]==0.34.0
-pydantic==2.10.4
+# fastapi/starlette bumped so they're compatible with fastmcp 3.x's starlette>=1.0.
+fastapi==0.137.1
+uvicorn[standard]==0.49.0
+pydantic==2.13.4
 httpx==0.28.1
 
 # --- Data stores ---
-redis==5.2.1
-asyncpg==0.30.0
-qdrant-client==1.12.1
+redis==8.0.0
+asyncpg==0.31.0
+qdrant-client==1.18.0
 
 # --- Knowledge / embeddings ---
 sentence-transformers==3.3.1
 
 # --- MCP tool layer ---
-fastmcp==2.3.4
+# fastmcp 3.x and the agent's langchain-mcp-adapters both depend on the `mcp`
+# SDK; pin the SDK explicitly so the tool server and agent share one version
+# (mcp<1.27 lacks streamable_http_client, which adapters 0.3.0 imports).
+fastmcp==3.4.2
+mcp==1.27.2
 
 # --- Agents (LangGraph + Ollama) ---
-langgraph==0.2.60
-langchain-core>=0.3.36,<0.4
-langchain-ollama==0.2.2
-langchain-mcp-adapters==0.0.9
+langgraph==1.2.5
+langchain-core==1.4.7
+langchain-ollama==1.1.0
+langchain-mcp-adapters==0.3.0
