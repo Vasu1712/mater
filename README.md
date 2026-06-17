@@ -144,7 +144,7 @@ uvicorn agent.api:app --reload --port 8100        # terminal 3
 * **Audio** (whisper.cpp ASR, VoXtream2 TTS, wake-word) is device/native and is
   not bundled here — the Mater agent exposes a text `/api/chat` surface that a
   voice front-end would wrap.
-* `gemma4:e4b-mini` is the default Ollama tag; set `LLM_MODEL` to the exact
+* `gemma4:e4b` is the default Ollama tag; set `LLM_MODEL` to the exact
   gemma4:e4b build you run.
 * The backend is one image with multiple entrypoints (ingestion / mcp / agent),
   keeping the shared `common` code DRY.

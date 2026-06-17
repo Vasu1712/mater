@@ -246,3 +246,7 @@ frontend/Thumbs.db
 
 # TypeScript Build Info
 frontend/*.tsbuildinfo
+
+.DS_Store
+plan.md
+plan.txt

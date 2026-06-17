@@ -6,9 +6,42 @@ thin, well-documented surface for the LLM.
 from __future__ import annotations
 
 import json
+from datetime import date
+
+import httpx
 
 from common import keys
 from common.clients import get_pg_pool, get_redis
+
+_COMPASS = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"]
+
+
+def _compass(deg: float) -> str:
+    return _COMPASS[round(deg / 45) % 8]
+
+
+async def _reverse_geocode(lat: float, lon: float) -> str | None:
+    """Best-effort human-readable place via OpenStreetMap Nominatim."""
+    try:
+        async with httpx.AsyncClient(
+            timeout=3.0, headers={"User-Agent": "mater-fleet/0.1"}
+        ) as c:
+            r = await c.get(
+                "https://nominatim.openstreetmap.org/reverse",
+                params={"lat": lat, "lon": lon, "format": "json", "zoom": 14},
+            )
+            if r.status_code == 200:
+                return r.json().get("display_name")
+    except Exception:  # network/geocoder hiccup -> fall back to raw coords
+        return None
+    return None
+
+# Service intervals: item -> (km interval, day interval or None).
+_SERVICE_INTERVALS: list[tuple[str, int, int | None]] = [
+    ("Oil change", 10000, 180),
+    ("Air filter", 20000, None),
+    ("Brake inspection", 20000, None),
+]
 
 
 # ----------------------------------------------------------------------------
@@ -22,6 +55,72 @@ async def latest_snapshot(car_id: str) -> dict | None:
 async def signal_latest(car_id: str, signal_name: str) -> dict | None:
     raw = await get_redis().get(keys.signal(car_id, signal_name))
     return json.loads(raw) if raw else None
+
+
+async def location(car_id: str) -> dict | None:
+    """Current GPS position, heading (with compass), and an approximate place."""
+    snap = await latest_snapshot(car_id)
+    geo = (snap or {}).get("geospatial")
+    if not geo:
+        return None
+    lat, lon = geo.get("latitude"), geo.get("longitude")
+    heading = geo.get("heading_deg")
+    place = await _reverse_geocode(lat, lon) if lat is not None and lon is not None else None
+    return {
+        "car_name": (snap or {}).get("car_name"),
+        "latitude": lat,
+        "longitude": lon,
+        "heading_deg": heading,
+        "heading_compass": _compass(heading) if heading is not None else None,
+        "approximate_location": place,
+        "timestamp": (snap or {}).get("timestamp"),
+    }
+
+
+async def maintenance_status(car_id: str) -> dict | None:
+    """Read the feed's service metadata and compute per-item due/overdue status."""
+    raw = await get_redis().get(keys.maintenance(car_id))
+    if not raw:
+        return None
+    m = json.loads(raw)
+
+    total = m.get("total_kms")
+    last_odo = m.get("last_serviced_odometer_km")
+    last_date = m.get("last_serviced_date")
+
+    km_since = round(total - last_odo, 1) if total is not None and last_odo is not None else None
+    days_since = None
+    if last_date:
+        try:
+            days_since = (date.today() - date.fromisoformat(last_date)).days
+        except ValueError:
+            days_since = None
+
+    items = []
+    for name, km_int, day_int in _SERVICE_INTERVALS:
+        due_in_km = round(km_int - km_since, 1) if km_since is not None else None
+        due_in_days = (day_int - days_since) if (day_int and days_since is not None) else None
+        overdue = (due_in_km is not None and due_in_km <= 0) or (
+            due_in_days is not None and due_in_days <= 0
+        )
+        items.append({
+            "item": name,
+            "interval_km": km_int,
+            "interval_days": day_int,
+            "due_in_km": due_in_km,
+            "due_in_days": due_in_days,
+            "status": "overdue" if overdue else "ok",
+        })
+
+    return {
+        "car_name": m.get("car_name"),
+        "last_serviced_date": last_date,
+        "last_serviced_odometer_km": last_odo,
+        "current_odometer_km": total,
+        "km_since_service": km_since,
+        "days_since_service": days_since,
+        "items": items,
+    }
 
 
 async def active_alerts(car_id: str) -> list[dict]:

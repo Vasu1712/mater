@@ -5,3 +5,57 @@
 body {
   @apply bg-ink text-slate-100;
 }
+
+/* Markdown rendering inside assistant chat bubbles */
+.markdown > :first-child {
+  @apply mt-0;
+}
+.markdown > :last-child {
+  @apply mb-0;
+}
+.markdown p {
+  @apply my-2 leading-relaxed;
+}
+.markdown h1,
+.markdown h2,
+.markdown h3 {
+  @apply mb-1 mt-3 font-semibold text-white;
+}
+.markdown h1 {
+  @apply text-base;
+}
+.markdown h2,
+.markdown h3 {
+  @apply text-sm;
+}
+.markdown ul {
+  @apply my-2 list-disc space-y-1 pl-5;
+}
+.markdown ol {
+  @apply my-2 list-decimal space-y-1 pl-5;
+}
+.markdown a {
+  @apply text-accent underline;
+}
+.markdown code {
+  @apply rounded bg-slate-900 px-1 py-0.5 text-[0.8em];
+}
+.markdown pre {
+  @apply my-2 overflow-x-auto rounded-lg bg-slate-900 p-3;
+}
+.markdown pre code {
+  @apply bg-transparent p-0;
+}
+.markdown hr {
+  @apply my-3 border-slate-700;
+}
+.markdown table {
+  @apply my-2 w-full border-collapse text-left text-xs;
+}
+.markdown th,
+.markdown td {
+  @apply border border-slate-700 px-2 py-1 align-top;
+}
+.markdown th {
+  @apply bg-slate-900 font-semibold;
+}

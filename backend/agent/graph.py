@@ -20,11 +20,11 @@ from .prompts import HOST_SYSTEM, MATER_SYSTEM
 _MATER_TOOLS = {
     "get_latest_snapshot", "get_signal_latest", "get_signal_timeline",
     "get_trip_summary", "search_knowledge", "check_active_alerts",
-    "predict_anomalies", "get_dtc_info",
+    "predict_anomalies", "get_dtc_info", "get_location",
 }
 _HOST_TOOLS = {
     "get_cars", "get_trip_history", "get_weekly_report",
-    "get_maintenance_schedule", "acknowledge_alert",
+    "get_maintenance_schedule", "acknowledge_alert", "get_location",
     # Host can also read history/knowledge:
     "get_signal_timeline", "get_trip_summary", "search_knowledge",
 }

@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { chat } from "@/lib/api";
 
 interface Msg {
@@ -8,8 +10,19 @@ interface Msg {
   text: string;
 }
 
-export function Chat({ carId }: { carId: string }) {
-  const [agent, setAgent] = useState<"host" | "mater">("host");
+export function Chat({
+  carId,
+  agent = "host",
+  title = "Assistant",
+  placeholder = "Message the assistant…",
+  hint = "Ask a question to get started.",
+}: {
+  carId: string;
+  agent?: "host" | "mater";
+  title?: string;
+  placeholder?: string;
+  hint?: string;
+}) {
   const [input, setInput] = useState("");
   const [msgs, setMsgs] = useState<Msg[]>([]);
   const [busy, setBusy] = useState(false);
@@ -32,39 +45,26 @@ export function Chat({ carId }: { carId: string }) {
 
   return (
     <div className="flex h-full flex-col rounded-xl bg-panel p-4">
-      <div className="mb-3 flex items-center justify-between">
-        <h2 className="font-semibold">Assistant</h2>
-        <div className="flex gap-1 text-xs">
-          {(["host", "mater"] as const).map((a) => (
-            <button
-              key={a}
-              onClick={() => setAgent(a)}
-              className={`rounded px-2 py-1 capitalize ${
-                agent === a ? "bg-accent text-ink" : "bg-slate-700"
-              }`}
-            >
-              {a}
-            </button>
-          ))}
-        </div>
-      </div>
+      <h2 className="mb-3 font-semibold">{title}</h2>
 
       <div className="flex-1 space-y-2 overflow-y-auto">
-        {msgs.length === 0 && (
-          <p className="text-sm text-slate-500">
-            Ask “How was my last drive?” or “What does P0420 mean?”
-          </p>
-        )}
+        {msgs.length === 0 && <p className="text-sm text-slate-500">{hint}</p>}
         {msgs.map((m, i) => (
           <div
             key={i}
             className={`max-w-[85%] rounded-lg px-3 py-2 text-sm ${
               m.role === "user"
-                ? "ml-auto bg-slate-700"
+                ? "ml-auto whitespace-pre-wrap bg-slate-700"
                 : "bg-slate-800 text-slate-100"
             }`}
           >
-            {m.text}
+            {m.role === "assistant" ? (
+              <div className="markdown">
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>{m.text}</ReactMarkdown>
+              </div>
+            ) : (
+              m.text
+            )}
           </div>
         ))}
         {busy && <div className="text-xs text-slate-500">thinking…</div>}
@@ -75,7 +75,7 @@ export function Chat({ carId }: { carId: string }) {
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && send()}
-          placeholder="Message Mater…"
+          placeholder={placeholder}
           className="flex-1 rounded-lg bg-slate-900 px-3 py-2 text-sm outline-none"
         />
         <button
