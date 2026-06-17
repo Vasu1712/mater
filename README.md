@@ -111,8 +111,6 @@ docker compose up -d --build          # bring up everything
 # Pull the LLM into Ollama (one time)
 docker exec mater_ollama ollama pull gemma4:e4b
 
-# Generate live telemetry (host needs: pip install httpx)
-python backend/tools/simulator.py --car-id acc001 --rate 5
 ```
 
 Then open the dashboard at <http://localhost:3000>. Gauges update once per
