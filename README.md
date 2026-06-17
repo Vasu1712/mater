@@ -6,6 +6,10 @@ Qdrant. Two LangGraph agents — **Mater** (driver, voice) and **Host** (owner,
 chat) — reach all of it through a single Fast-MCP tool layer backed by a local
 Ollama LLM.
 
+## Inspiration
+
+The inspiration for this project came from a simple experiment: plugging an OBD adapter into my car and hacking together a pipeline to stream raw ECU telemetry directly into an AI agent. Watching the AI translate a chaotic wall of real-time numbers into plain-language insights was incredibly satisfying, but it also sparked a bigger realization. Cars are constantly emitting behavioral signals. By feeding this continuous historical telemetry into an AI, we can move past basic diagnostics to spot subtle patterns like gradual sensor drift or unusual load and predict component failures long before they actually happen and also as a communitation bridge to direclty talk to your car.
+
 # High Level Architecture
 
 ```mermaid
