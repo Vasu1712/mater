@@ -8,71 +8,84 @@ Ollama LLM.
 
 # High Level Architecture
 
-```
+```mermaid
 flowchart TB
 
+    feed["live-car-api (Vercel)<br/>WebSocket • grouped telemetry @2Hz"]
+
     %% ── Ingestion Layer ──
-    subgraph INGESTION["Ingestion Layer"]
-        api["FastAPI /live-car-data<br/>Parse • Enrich • Route"]
+    subgraph INGESTION["Ingestion"]
+        bridge["telemetry-bridge<br/>ws_adapter.py<br/>grouped → flat TelemetryFrame"]
+        api["FastAPI /live-car-data<br/>writer.py"]
+        flusher["Flusher<br/>write-behind • 1s batches"]
     end
+
+    knowledge["Knowledge ingest CLI<br/>tools/ingest_knowledge.py"]
 
     %% ── Data Stores ──
     subgraph STORES["Data Stores"]
-        redis["Redis<br/><small>Hot Path</small><br/>Live telemetry snapshots<br/>Signal cache • Alert state<br/>Write-behind queue"]
-        tsdb["TimescaleDB<br/><small>Cold Path</small><br/>car_telemetry hypertable<br/>1min / 5min / 1hr aggregates<br/>Trips • Users • Cars"]
-        qdrant["Qdrant<br/><small>Knowledge Path</small><br/>Manuals • TSBs<br/>Mechanic logs<br/>Diagnosis history"]
+        redis["Redis — Hot Path<br/>live snapshot • per-signal cache<br/>alerts • MIL • maintenance • location"]
+        tsdb["TimescaleDB — Cold Path<br/>car_telemetry hypertable<br/>1m / 5m / 1h aggregates • trips"]
+        qdrant["Qdrant — Knowledge Path<br/>manuals • TSBs • mechanic logs"]
     end
 
     %% ── MCP Layer ──
-    subgraph MCP["Fast-MCP Server"]
-        tools["13 Tools<br/><small>get_latest_snapshot<br/>get_signal_timeline<br/>search_knowledge<br/>check_active_alerts<br/>predict_anomalies<br/>get_dtc_info<br/>get_trip_summary<br/>…</small>"]
+    subgraph MCP["Fast-MCP Server — 14 tools"]
+        tools["get_latest_snapshot • get_signal_latest<br/>get_signal_timeline • check_active_alerts<br/>get_location • predict_anomalies<br/>search_knowledge • get_dtc_info<br/>get_maintenance_schedule • get_trip_summary • …"]
     end
 
-    %% ── LLM / Agent Layer ──
-    subgraph OLLAMA["Ollama — gemma4:e4b-3-Ultra-4B"]
-        mater["🧑‍✈️ Mater Agent<br/><small>Driver • Voice-first<br/>Wake word: 'Mater'<br/>Always-on</small>"]
-        host["👤 Host Agent<br/><small>Owner • Chat-based<br/>Fleet management<br/>Lower priority</small>"]
+    %% ── Agent Gateway ──
+    subgraph AGENTS["Agent Gateway :8100"]
+        mater["Mater Agent<br/>driver • voice"]
+        host["Host Agent<br/>owner • chat"]
+        reads["Dashboard read-throughs<br/>/api/snapshot • /api/alerts"]
     end
+
+    ollama["Ollama<br/>gemma4:e4b"]
 
     %% ── Interfaces ──
-    subgraph UI["User Interfaces"]
-        dash["📊 Dashboard<br/><small>Next.js • Tailwind<br/>Real-time gauges</small>"]
-        voice["🎤 Voice I/O<br/><small>whisper.cpp ASR<br/>VoXtream2 TTS<br/>Wake-word detector</small>"]
+    subgraph UI["Frontend — Next.js"]
+        driver["/driver<br/>gauges + Mater voice (Web Speech)"]
+        hostui["/host<br/>chat"]
     end
 
     %% ── Flows ──
-    car --> api
-
-    api -->|" Every 200ms"| redis
-    api -->|" Batch flush (1s)"| tsdb
-    api -->|" Document ingest"| qdrant
+    feed --> bridge --> api
+    api -->|hot-path write| redis
+    api -->|enqueue rows| flusher
+    flusher -->|COPY batch| tsdb
+    knowledge --> qdrant
 
     redis --> tools
-    tsdb  --> tools
-    qdrant--> tools
+    tsdb --> tools
+    qdrant --> tools
 
     tools --> mater
     tools --> host
+    mater --> ollama
+    host --> ollama
+    reads --> redis
 
-    mater -->|"Spoken response + alerts"| voice
-    mater -->|"Dashboard updates"| dash
-    host  -->|"Chat responses"| dash
-
-    voice -->|"User: 'Mater, …'"| mater
-    dash  -->|"User queries (chat)"| host
+    driver -->|"poll (1s)"| reads
+    driver -->|"voice → /api/chat"| mater
+    hostui -->|"chat → /api/chat"| host
+    mater -->|spoken reply| driver
+    host -->|chat reply| hostui
 
     %% ── Styling ──
+    classDef src fill:#ede9fe,stroke:#7c3aed,stroke-width:2px
     classDef ingestion fill:#e6f3ff,stroke:#4a90d9,stroke-width:2px
     classDef store fill:#f0f4f8,stroke:#5b6f82,stroke-width:2px
     classDef mcp fill:#fff3e0,stroke:#f57c00,stroke-width:2px
     classDef agent fill:#e8f5e9,stroke:#388e3c,stroke-width:2px
     classDef ui fill:#fce4ec,stroke:#d81b60,stroke-width:2px
 
-    class api ingestion
+    class feed,knowledge src
+    class bridge,api,flusher ingestion
     class redis,tsdb,qdrant store
     class tools mcp
-    class mater,host agent
-    class dash,voice ui
+    class mater,host,reads agent
+    class driver,hostui ui
 ```
 
 ## Layout
@@ -96,7 +109,7 @@ docker-compose.yml all services + Redis / TimescaleDB / Qdrant / Ollama
 docker compose up -d --build          # bring up everything
 
 # Pull the LLM into Ollama (one time)
-docker exec mater_ollama ollama pull gemma4:e4b-mini
+docker exec mater_ollama ollama pull gemma4:e4b
 
 # Generate live telemetry (host needs: pip install httpx)
 python backend/tools/simulator.py --car-id acc001 --rate 5
