@@ -60,6 +60,14 @@ async def check_active_alerts(car_id: str) -> list[dict]:
 
 
 @mcp.tool
+async def get_location(car_id: str) -> dict:
+    """Current GPS location of the vehicle: latitude/longitude, heading (with
+    compass direction) and an approximate human-readable place name."""
+    res = await queries.location(car_id)
+    return res or {"error": "no live location data", "car_id": car_id}
+
+
+@mcp.tool
 async def predict_anomalies(car_id: str, signal_name: str, minutes: int = 60) -> dict:
     """Linear-trend extrapolation flagging an emerging anomaly for a signal."""
     res = await queries.linear_forecast(car_id, signal_name, minutes)
@@ -112,18 +120,12 @@ async def get_weekly_report(car_id: str) -> dict:
 
 @mcp.tool
 async def get_maintenance_schedule(car_id: str) -> dict:
-    """Service planning heuristics derived from accumulated runtime (TimescaleDB)."""
-    pool_rows = await queries.signal_timeline(car_id, "vehicle_speed", 30 * 24 * 60)
-    active_buckets = sum(1 for r in pool_rows if (r["value"] or 0) > 0)
-    return {
-        "car_id": car_id,
-        "active_minutes_30d_estimate": active_buckets,
-        "recommendations": [
-            {"item": "Oil change", "due": "every 10,000 km or 6 months"},
-            {"item": "Air filter", "due": "every 20,000 km"},
-            {"item": "Brake inspection", "due": "every 20,000 km"},
-        ],
-    }
+    """Real service-due status computed from the vehicle's odometer and last
+    service date (km/days since service vs. interval, per maintenance item)."""
+    res = await queries.maintenance_status(car_id)
+    if not res:
+        return {"car_id": car_id, "error": "no maintenance data available for this vehicle"}
+    return {"car_id": car_id, **res}
 
 
 @mcp.tool

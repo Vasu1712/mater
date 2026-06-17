@@ -20,9 +20,11 @@ async def write_frame(frame: TelemetryFrame) -> list[dict]:
 
     snapshot = {
         "car_id": frame.car_id,
+        "car_name": frame.car_name,
         "trip_id": frame.trip_id,
         "timestamp": ts_iso,
         "mil": frame.mil,
+        "geospatial": frame.geospatial,
         "signals": {
             s.name: {"v": s.value, "u": s.unit, "t": ts_iso} for s in frame.signals
         },
@@ -47,9 +49,18 @@ async def write_frame(frame: TelemetryFrame) -> list[dict]:
     if frame.mil:
         pipe.set(keys.mil(frame.car_id), "1")
 
-    # Active alerts (until acknowledged -> no TTL)
+    # Live threshold alerts: reconcile with this frame so they self-clear once
+    # the signal returns to normal (latched DTC faults use the `mil` key instead).
     if alerts:
         pipe.set(keys.alerts(frame.car_id), json.dumps(alerts))
+    else:
+        pipe.delete(keys.alerts(frame.car_id))
+
+    # Service metadata (slowly-changing -> no TTL). Carry car_name so the host
+    # agent can name the vehicle in maintenance answers.
+    if frame.maintenance:
+        maint = {**frame.maintenance, "car_name": frame.car_name}
+        pipe.set(keys.maintenance(frame.car_id), json.dumps(maint))
 
     # [3] write-behind buffer for TimescaleDB (one JSON row per signal)
     for s in frame.signals:

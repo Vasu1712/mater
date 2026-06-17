@@ -9,6 +9,8 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import uuid
+from datetime import datetime
 
 from common import keys
 from common.clients import get_pg_pool, get_redis
@@ -36,14 +38,16 @@ async def _flush_queue(queue_key: str) -> int:
     records = []
     for item in raw:
         d = json.loads(item)
+        trip_id = d.get("trip_id")
         records.append((
-            d["time"], d["car_id"], d["signal_name"], float(d["value"]),
-            d.get("unit"), d.get("pid"), d.get("trip_id"), d.get("quality", "normal"),
+            # COPY needs native objects, not ISO strings, for timestamptz/uuid.
+            datetime.fromisoformat(d["time"]), d["car_id"], d["signal_name"],
+            float(d["value"]), d.get("unit"), d.get("pid"),
+            uuid.UUID(trip_id) if trip_id else None, d.get("quality", "normal"),
         ))
 
     pool = await get_pg_pool()
     async with pool.acquire() as conn:
-        # asyncpg parses the ISO timestamp/uuid strings against the column types.
         await conn.copy_records_to_table(
             "car_telemetry", records=records, columns=_COLUMNS
         )

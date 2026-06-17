@@ -32,7 +32,7 @@ class Settings:
 
     # --- Ollama (LLM engine) ---
     OLLAMA_URL: str = _env("OLLAMA_URL", "http://localhost:11434")
-    LLM_MODEL: str = _env("LLM_MODEL", "gemma4:e4b-mini")
+    LLM_MODEL: str = _env("LLM_MODEL", "gemma4:e4b")
 
     # --- MCP server ---
     MCP_HOST: str = _env("MCP_HOST", "0.0.0.0")
@@ -42,6 +42,17 @@ class Settings:
     # --- Flusher ---
     FLUSH_INTERVAL_SECONDS: float = float(_env("FLUSH_INTERVAL_SECONDS", "1.0"))
     FLUSH_BATCH_SIZE: int = int(_env("FLUSH_BATCH_SIZE", "500"))
+
+    # --- Telemetry source bridge (live-car-api WebSocket -> ingestion) ---
+    # Vercel is TLS-only, so the scheme must be wss:// (not ws://).
+    TELEMETRY_WS_URL: str = _env(
+        "TELEMETRY_WS_URL",
+        "wss://live-car-api.vercel.app/ws/v1/telemetry/stream?hz=2",
+    )
+    INGEST_URL: str = _env("INGEST_URL", "http://ingestion:8000/live-car-data")
+    # Override the upstream car_id so it matches the seeded car / dashboard.
+    # Set to "" to pass the feed's own car_id through unchanged.
+    TELEMETRY_CAR_ID: str = _env("TELEMETRY_CAR_ID", "acc001")
 
 
 settings = Settings()

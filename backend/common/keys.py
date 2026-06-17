@@ -28,3 +28,8 @@ def alerts(car_id: str) -> str:
 def ingest_queue(car_id: str) -> str:
     """Write-behind list buffering rows for TimescaleDB."""
     return f"car:{car_id}:ingest:queue"
+
+
+def maintenance(car_id: str) -> str:
+    """Latest service metadata from the feed (last service, odometer)."""
+    return f"car:{car_id}:maintenance"

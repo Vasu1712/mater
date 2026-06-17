@@ -14,7 +14,7 @@ from datetime import datetime, timezone
 
 import httpx
 
-INGEST_URL_DEFAULT = "http://127.0.0.1:8001/api/v1/telemetry"
+INGEST_URL_DEFAULT = "http://127.0.0.1:8000/live-car-data"
 
 # signal_name -> (pid, unit)
 _SIGNALS = {

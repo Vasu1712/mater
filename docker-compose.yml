@@ -80,6 +80,19 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
+  # Telemetry source bridge (live-car-api WebSocket -> ingestion /live-car-data)
+  telemetry-bridge:
+    build: ./backend
+    container_name: mater_telemetry_bridge
+    command: python -m tools.ws_adapter
+    environment:
+      - TELEMETRY_WS_URL=wss://live-car-api.vercel.app/ws/v1/telemetry/stream?hz=2
+      - INGEST_URL=http://ingestion:8000/live-car-data
+      - TELEMETRY_CAR_ID=acc001   # normalize upstream car_id; "" = passthrough
+    depends_on:
+      - ingestion
+    restart: unless-stopped
+
   # Fast-MCP tool server (13 tools)
   mcp:
     build: ./backend
@@ -111,13 +124,13 @@ services:
       - PG_DSN=postgresql://mater_admin:mater_secure_password@timescaledb:5432/mater_fleet
       - QDRANT_URL=http://qdrant:6333
       - MCP_URL=http://mcp:8765/mcp
-      - OLLAMA_URL=http://ollama:11434
-      - LLM_MODEL=gemma4:e4b-mini
+      # Use the host's Ollama (where the models live) instead of the empty container.
+      - OLLAMA_URL=http://host.docker.internal:11434
+      - LLM_MODEL=gemma4:e4b
     ports:
       - "8100:8100"
     depends_on:
       - mcp
-      - ollama
     restart: unless-stopped
 
   # Next.js dashboard + chat UI

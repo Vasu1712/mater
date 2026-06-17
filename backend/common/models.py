@@ -24,10 +24,15 @@ class TelemetryFrame(BaseModel):
     """One ingestion frame from the vehicle (~every 200ms)."""
 
     car_id: str
+    car_name: str | None = None
     trip_id: str | None = None
     timestamp: datetime = Field(default_factory=_now)
     signals: list[SignalReading]
     mil: bool = False
+    # Live GPS block from the feed (latitude, longitude, heading_deg).
+    geospatial: dict | None = None
+    # Slowly-changing service metadata from the feed (last service, odometer…).
+    maintenance: dict | None = None
 
 
 class Alert(BaseModel):
