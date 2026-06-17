@@ -72,13 +72,13 @@ flowchart TB
     mater -->|spoken reply| driver
     host -->|chat reply| hostui
 
-    %% ── Styling ──
-    classDef src fill:#ede9fe,stroke:#7c3aed,stroke-width:2px
-    classDef ingestion fill:#e6f3ff,stroke:#4a90d9,stroke-width:2px
-    classDef store fill:#f0f4f8,stroke:#5b6f82,stroke-width:2px
-    classDef mcp fill:#fff3e0,stroke:#f57c00,stroke-width:2px
-    classDef agent fill:#e8f5e9,stroke:#388e3c,stroke-width:2px
-    classDef ui fill:#fce4ec,stroke:#d81b60,stroke-width:2px
+%% ── Styling ──
+    classDef src fill:#ede9fe,stroke:#7c3aed,stroke-width:2px,color:#333333
+    classDef ingestion fill:#e6f3ff,stroke:#4a90d9,stroke-width:2px,color:#1e3a8a
+    classDef store fill:#f0f4f8,stroke:#5b6f82,stroke-width:2px,color:#333333
+    classDef mcp fill:#fff3e0,stroke:#f57c00,stroke-width:2px,color:#854d0e
+    classDef agent fill:#e8f5e9,stroke:#388e3c,stroke-width:2px,color:#14532d
+    classDef ui fill:#fce4ec,stroke:#d81b60,stroke-width:2px,color:#831843
 
     class feed,knowledge src
     class bridge,api,flusher ingestion
